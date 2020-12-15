@@ -62,7 +62,6 @@ function Response:__tostring()
         tostring(self.Headers),
         self.Body
     )
-    print("RESPONSE:\n" .. res)
     return res
 end
 

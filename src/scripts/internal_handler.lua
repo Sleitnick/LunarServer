@@ -2,16 +2,16 @@ local Response = require("response")
 local Request = require("request")
 
 return function(handlerName, reqStr)
-    local success, res = pcall(function()
-        local req, r = Request.new(reqStr), Response.new()
+    local success, result = pcall(function()
+        local req, res = Request.new(reqStr), Response.new()
         local handler = require(handlerName)
-        handler(req, r)
-        return r
+        handler(req, res)
+        return res
     end)
     if (success) then
-        return tostring(res)
+        return tostring(result)
     else
-        print(("Server Error: %s"):format(tostring(res)))
+        print(("Server Error: %s"):format(tostring(result)))
         local resErr = Response.new()
         local accepts = reqStr:match("Accept: (.-)\n")
         local acceptsHtml = (accepts and accepts:find("text/html"))
@@ -20,11 +20,13 @@ return function(handlerName, reqStr)
             resErr:HTML("/src/html/500.html", {
                 title = resErr.StatusText;
                 status = resErr.Status;
-                error = tostring(res);
+                error = tostring(result);
             }):Send()
         else
             resErr:Text(resErr.StatusText):Send()
         end
-        return tostring(resErr)
+        local resTxt = tostring(resErr)
+        print(("Response for error:\n%s"):format(resTxt))
+        return resTxt
     end
 end

@@ -11,7 +11,7 @@
 #include <lauxlib.h>
 #include <lualib.h>
 #include <time.h>
-#include "luaserver.h"
+#include "server.h"
 #include "lunar.h"
 
 volatile int server_fd = 0;
@@ -61,10 +61,6 @@ void *pthread_routine(void *arg) {
 	int new_socket_fd = pthread_arg->new_socket_fd;
 	const char* handler = pthread_arg->handler;
 	free(arg);
-	char *content = "Hello, world!";
-	int content_len = strlen(content);
-	int status_code = 200;
-	char* content_type = "text/plain";
 	char buffer[30000] = {0};
 	read(new_socket_fd, buffer, 30000);
 
@@ -76,11 +72,10 @@ void *pthread_routine(void *arg) {
 	lua_pushstring(L, buffer);
 	lua_call(L, 2, 1);
 	const char* result = lua_tostring(L, -1);
-	lua_close(L);
-
-	printf("Result: %s\n", result);
 	
+	// Write response and then close Lua:
 	write(new_socket_fd, result, strlen(result));
+	lua_close(L);
 
 	end = clock();
 	cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
