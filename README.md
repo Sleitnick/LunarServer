@@ -107,3 +107,48 @@ METHODS:
 :NotFound(callback: (req: Request, res: Response) -> void)
 :Run(req: Request, res: Response)
 ```
+
+## Router Example
+
+```lua
+-- config.lua
+return {
+	Port = 8080;
+	Handler = "handler";
+}
+```
+
+```lua
+-- handler.lua
+
+local route = require("route").new()
+
+	-- Log all requests:
+	:On("*", function(req, res, nxt)
+		print("Got request:", req.Path)
+		nxt()
+	end)
+
+	-- Point "/static/..." to files under local public dir
+	:Static("/static", "./public")
+
+	-- Home page:
+	:Get("/", function(req, res)
+		res:HTML("./somewhere/index.html"):Send()
+	end)
+
+	-- Match path parameter:
+	:Get("/api/{Person}", function(req, res)
+		res:Text("Person: " .. req.Params.Person):Send()
+	end)
+
+	-- Send a 404 HTML page:
+	:NotFound(function(req, res)
+		res:HTML("/somewhere/404.html"):Send()
+	end)
+
+-- Run the router for each request:
+return function(request, response)
+	route:Run(request, response)
+end
+```
