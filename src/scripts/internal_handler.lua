@@ -2,6 +2,7 @@ local Response = require("response")
 local Request = require("request")
 
 return function(handlerName, reqStr)
+    local resTxt
     local success, result = pcall(function()
         local req, res = Request.new(reqStr), Response.new()
         local handler = require(handlerName)
@@ -9,7 +10,7 @@ return function(handlerName, reqStr)
         return res
     end)
     if (success) then
-        return tostring(result)
+        resTxt = tostring(result)
     else
         print(("Server Error: %s"):format(tostring(result)))
         local resErr = Response.new()
@@ -25,8 +26,7 @@ return function(handlerName, reqStr)
         else
             resErr:Text(resErr.StatusText):Send()
         end
-        local resTxt = tostring(resErr)
-        print(("Response for error:\n%s"):format(resTxt))
-        return resTxt
+        resTxt = tostring(resErr)
     end
+    return resTxt, #resTxt
 end

@@ -3,6 +3,14 @@ local Util = require("util")
 local Route = {}
 Route.__index = Route
 
+local function JoinPath(...)
+    local paths = {...}
+    for i,v in ipairs(paths) do
+        paths[i] = v:gsub("^/", ""):gsub("/$", "")
+    end
+    return table.concat(paths, "/")
+end
+
 function Route.new()
     local self = setmetatable({
         -- _req = request;
@@ -11,6 +19,17 @@ function Route.new()
         _notFound = nil;
     }, Route)
     return self
+end
+
+function Route:Static(path, staticFilepath)
+    return self:On("*", function(req, res, nxt)
+        local filepath = req.Path:match("^" .. path .. "/(.+)")
+        if (filepath) then
+            res:File(JoinPath(staticFilepath, filepath)):SendIfOk()
+        else
+            nxt()
+        end
+    end)
 end
 
 function Route:On(path, callback, method)

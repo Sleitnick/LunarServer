@@ -70,11 +70,12 @@ void *pthread_routine(void *arg) {
 	lua_call(L, 0, 1);
 	lua_pushstring(L, handler);
 	lua_pushstring(L, buffer);
-	lua_call(L, 2, 1);
-	const char* result = lua_tostring(L, -1);
+	lua_call(L, 2, 2);
+	int result_size = lua_tointeger(L, -1);
+	const char* result = lua_tostring(L, -2);
 	
 	// Write response and then close Lua:
-	write(new_socket_fd, result, strlen(result));
+	write(new_socket_fd, result, result_size);
 	lua_close(L);
 
 	end = clock();

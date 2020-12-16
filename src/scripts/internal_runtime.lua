@@ -7,6 +7,6 @@ return function(config)
 	local server = LuaServer.new(config.Handler)
 	local port = tonumber(config.Port) or 8080
 	server:Listen(port, function()
-		print("Server listening")
+		print(("Server listening on port %i"):format(port))
 	end)
 end
