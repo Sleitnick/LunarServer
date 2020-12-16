@@ -1,8 +1,8 @@
 # LunarServer
 
-Lua server runtime
+A stateless, multi-threaded, fast, and easy Lua server runtime.
 
-**Note:** This is experimental and should not be used for any real projects.
+**Warning:** This is experimental and should not be used for any real projects.
 
 ## Prerequisites
 - Docker
