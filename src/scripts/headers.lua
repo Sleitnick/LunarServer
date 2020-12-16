@@ -27,7 +27,9 @@ end
 function Headers:SetIfNil(name, value)
 	if (not self:Has(name)) then
 		self:Set(name, value)
+		return true
 	end
+	return false
 end
 
 

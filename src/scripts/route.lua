@@ -44,6 +44,22 @@ function Route:Get(path, callback)
 	return self:On(path, callback, "GET")
 end
 
+function Route:Post(path, callback)
+	return self:On(path, callback, "POST")
+end
+
+function Route:Put(path, callback)
+	return self:On(path, callback, "PUT")
+end
+
+function Route:Delete(path, callback)
+	return self:On(path, callback, "DELETE")
+end
+
+function Route:Patch(path, callback)
+	return self:On(path, callback, "PATCH")
+end
+
 function Route:NotFound(callback)
 	self._notFound = callback
 	return self
