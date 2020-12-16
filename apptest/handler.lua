@@ -1,5 +1,7 @@
 -- Handle requests
 
+print("------ LOADED HANDLER ------")
+
 local route = require("route").new()
 	:On("*", function(_req, _res, nxt)
 		--print("LOGGER!", req.Path)

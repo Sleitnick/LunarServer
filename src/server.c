@@ -1,20 +1,8 @@
-#include <stdio.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <netinet/in.h>
-#include <string.h>
-#include <signal.h>
-#include <pthread.h>
-#include <regex.h>
-#include <lua.h>
-#include <lauxlib.h>
-#include <lualib.h>
-#include <time.h>
 #include "server.h"
-#include "lunar.h"
 
 volatile int server_fd = 0;
+
+pthread_mutex_t lock;
 
 typedef struct pthread_arg_t {
 	int new_socket_fd;
@@ -27,6 +15,8 @@ void sigint() {
 		printf("\nStopping server\n");
 		close(server_fd);
 	}
+	statepool_close_states();
+	pthread_mutex_destroy(&lock);
 	exit(0);
 }
 
@@ -53,6 +43,7 @@ static int luaserver_new(lua_State *L) {
 
 // Handle each request:
 void *pthread_routine(void *arg) {
+
 	clock_t start, end;
 	double cpu_time_used;
 	start = clock();
@@ -65,18 +56,18 @@ void *pthread_routine(void *arg) {
 	read(new_socket_fd, buffer, 30000);
 
 	// Lua:
-	lua_State *L = lunar_newstate();
-	luaL_loadfile(L, "/src/scripts/internal_handler.lua");
-	lua_call(L, 0, 1);
+	lua_State *L = statepool_get_state();
+	lua_pushvalue(L, -1); // Function handler from script
 	lua_pushstring(L, handler);
 	lua_pushstring(L, buffer);
 	lua_call(L, 2, 2);
 	int result_size = lua_tointeger(L, -1);
 	const char* result = lua_tostring(L, -2);
 	
-	// Write response and then close Lua:
+	// Write response and then repool Lua:
 	write(new_socket_fd, result, result_size);
-	lua_close(L);
+	lua_pop(L, 2);
+	statepool_pool_state(L);
 
 	end = clock();
 	cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
@@ -84,6 +75,7 @@ void *pthread_routine(void *arg) {
 
 	close(new_socket_fd);
 	return NULL;
+	
 }
 
 static int luaserver_listen(lua_State *L) {
@@ -156,6 +148,18 @@ static int luaserver_listen(lua_State *L) {
 		return 0;
 	}
 
+	if (pthread_mutex_init(&lock, NULL) != 0) {
+		close(server_fd);
+		luaL_error(L, "pthread_mutex_init");
+		return 0;
+	}
+
+	if (statepool_init() != STATEPOOL_OK) {
+		close(server_fd);
+		luaL_error(L, "statepool_init");
+		return 0;
+	}
+
 	while(1) {
 		pthread_arg = (pthread_arg_t *)malloc(sizeof(*pthread_arg));
 		if (!pthread_arg) {
@@ -169,7 +173,6 @@ static int luaserver_listen(lua_State *L) {
 			free(pthread_arg);
 			continue;
 		}
-		lua_State *lua_thread = lua_newthread(L);
 		pthread_arg->new_socket_fd = new_socket;
 		pthread_arg->handler = handler;
 		if (pthread_create(&pthread, &pthread_attr, pthread_routine, (void *)pthread_arg) != 0) {
@@ -177,6 +180,7 @@ static int luaserver_listen(lua_State *L) {
 			free(pthread_arg);
 			continue;
 		}
+		statepool_check_states_for_removal();
 	}
 
 	return 0;
