@@ -38,7 +38,7 @@ function JSON.Parse(str)
 		local lookingForColon = false
 		local lookingForValue = false
 		local foundAnyKey = false
-		while (index < #codepoints) do
+		while (index <= #codepoints) do
 			local codepoint = codepoints[index]
 			local char = utf8.char(codepoint)
 			if (lookingForKey) then
@@ -94,7 +94,7 @@ function JSON.Parse(str)
 		index = (index + 1)
 		local gotValue = false
 		local gotSep = false
-		while (index < #codepoints) do
+		while (index <= #codepoints) do
 			local codepoint = codepoints[index]
 			local char = utf8.char(codepoint)
 			if (char:match("%s")) then
@@ -130,7 +130,7 @@ function JSON.Parse(str)
 		local startIndex = index
 		index = (index + 1)
 		local ctrl = false
-		while (index < #codepoints) do
+		while (index <= #codepoints) do
 			local codepoint = codepoints[index]
 			local char = utf8.char(codepoint)
 			if (ctrl) then
@@ -164,7 +164,7 @@ function JSON.Parse(str)
 		local char = utf8.char(codepoints[index])
 		local function GetAllDigits(throwIfNone)
 			local startIndex = index
-			while (index < #codepoints) do
+			while (index <= #codepoints) do
 				char = utf8.char(codepoints[index])
 				if (char:match("%d")) then
 					index = (index + 1)
@@ -205,7 +205,7 @@ function JSON.Parse(str)
 	end
 
 	TokenizeValue = function(top)
-		while (index < #codepoints) do
+		while (index <= #codepoints) do
 			local codepoint = codepoints[index]
 			local char = utf8.char(codepoint)
 			if (top and char:match("%s")) then
@@ -255,7 +255,7 @@ function JSON.Parse(str)
 		local obj = {}
 		tokenIndex = (tokenIndex + 1)
 		local key = nil
-		while (tokenIndex < #tokens) do
+		while (tokenIndex <= #tokens) do
 			local token = tokens[tokenIndex]
 			if (not key) then
 				if (token.type == "str") then
@@ -278,7 +278,7 @@ function JSON.Parse(str)
 	ParseArray = function(startToken)
 		local arr = {}
 		tokenIndex = (tokenIndex + 1)
-		while (tokenIndex < #tokens) do
+		while (tokenIndex <= #tokens) do
 			local token = tokens[tokenIndex]
 			if (token.type == "arr" and token.s == "]") then
 				break
