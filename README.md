@@ -164,7 +164,7 @@ end)
 -- Handle posting JSON data on an API endpoint:
 route:Post("/api/{ID}", function(req, res)
 	local data = req:JSON() -- {"info": "hello world"}
-	SomeDatabase:Write(req.params.ID, data.info)
+	SomeDatabase:Write(req.Params.ID, data.info)
 	res:JSON({
 		msg = "good";
 	}):Send()
