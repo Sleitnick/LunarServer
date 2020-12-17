@@ -36,7 +36,12 @@ make build
 	docker run --rm -it --mount 'type=bind,src=${PWD},dst=/app' -p 8080:8080 lunarserver lunarserver /app/config.lua
 	```
 
-Tips:
+### About the Handler
+The Handler script handles all requests sent to the server. Similar to AWS Lambdas, these handlers are stateless in design.
+
+Also like Lambdas, LunarServer handlers will spawn for each request, but will be kept warm for a period of time. Thus it is most beneficial to create routes, connect to databases, etc., outside of the returned function handler. (See the Router example at the bottom of this document.)
+
+### Tips
 
 - Make sure the bound port within the `docker run` command is the same as the port defined in the `config.lua` file.
 - The naming of `config.lua` and `handler.lua` can be anything, as long as the `docker run` command points to the config file and the config file points to the handler file under the Handler property.
