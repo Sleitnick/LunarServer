@@ -1,13 +1,11 @@
-local JSON = require("src/scripts/json")
+package.path = (package.path .. ";src/scripts/?.lua")
+
+local JSON = require("json")
 
 local parsed = JSON.Parse([[
 {
-	"abc": [32, 75]
+	"abc": [32, 75, null, true, false, null]
 }
 ]])
 
-print(#parsed.abc)
-
-print(JSON.Stringify({
-	Hello = 32;
-}))
+print(table.unpack(parsed.abc))

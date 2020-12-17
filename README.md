@@ -119,9 +119,13 @@ METHODS:
 ```
 local JSON = require("json")
 
-.Parse(json: string): table|string|boolean|number|nil
-.Stringify(value: table|string|boolean|number|nil)
+.Null: Symbol
+
+.Parse(json: string): table|string|boolean|number|JSON.Null
+.Stringify(value: table|string|boolean|number|nil|JSON.Null)
 ```
+
+An important note is that Lua doesn't support `nil` types within a table, unlike JSON. To make up for this, the JSON library for LunarServer includes the `JSON.Null` symbol to represent any `null` values within JSON.
 
 ## Router Example
 

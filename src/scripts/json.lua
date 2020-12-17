@@ -1,4 +1,8 @@
+local Symbol = require("symbol")
+
 local JSON = {}
+
+JSON.Null = Symbol.new("JSON_NULL")
 
 local ALLOWED_STRINGIFY_TYPES = {
 	["nil"] = true;
@@ -229,11 +233,11 @@ function JSON.Parse(str)
 				TokenizeNumber()
 			elseif (char == "t" and utf8.char(GetCodepoints(index, 4)) == "true") then
 				-- Boolean true
-				table.insert(tokens, {s = "true", type = "bool"})
+				table.insert(tokens, {s = true, type = "bool"})
 				index = (index + 4)
 			elseif (char == "f" and utf8.char(GetCodepoints(index, 5)) == "false") then
 				-- Boolean true
-				table.insert(tokens, {s = "false", type = "bool"})
+				table.insert(tokens, {s = false, type = "bool"})
 				index = (index + 5)
 			elseif (char == "n" and utf8.char(GetCodepoints(index, 4)) == "null") then
 				-- Nil
@@ -257,6 +261,10 @@ function JSON.Parse(str)
 			return ParseString(token)
 		elseif (t == "num") then
 			return ParseNumber(token)
+		elseif (t == "bool") then
+			return token.s
+		elseif (t == "null") then
+			return JSON.Null
 		end
 	end
 
