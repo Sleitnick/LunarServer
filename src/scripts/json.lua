@@ -25,6 +25,8 @@ end
 
 function JSON.Parse(str)
 
+	local startClock = os.clock()
+
 	local tokens = {}
 	local codepoints = {}
 	for _,c in utf8.codes(str) do
@@ -75,7 +77,7 @@ function JSON.Parse(str)
 					lookingForValue = true
 					index = (index + 1)
 				else
-					error("Expected \":\" after object key; got \"" .. char .. "\"")
+					error("Expected \":\" after object key; got \"" .. char .. "\"", 0)
 				end
 			elseif (lookingForValue) then
 				if (char:match("%s")) then
@@ -89,7 +91,7 @@ function JSON.Parse(str)
 					index = (index + 1)
 				elseif (char == ",") then
 					lookingForKey = true
-					table.insert(tokens, {s = ",", type = "sep"})
+					--table.insert(tokens, {s = ",", type = "sep"})
 					index = (index + 1)
 				elseif (char == "}") then
 					table.insert(tokens, {s = "}", type = "obj"})
@@ -114,24 +116,24 @@ function JSON.Parse(str)
 				index = (index + 1)
 			elseif (char == "]") then
 				if (gotSep) then
-					error("Cannot end array with comma")
+					error("Cannot end array with comma", 0)
 				end
 				index = (index + 1)
 				table.insert(tokens, {s = "]", type = "arr"})
 				break
 			elseif (gotValue) then
 				if (char == ",") then
-					table.insert(tokens, {s = ",", type = "sep"})
+					--table.insert(tokens, {s = ",", type = "sep"})
 					index = (index + 1)
 					gotValue = false
 					gotSep = true
 				else
-					error("Unknown symbol when expecting comma in array: \"" .. char .. "\"")
+					error("Unknown symbol when expecting comma in array: \"" .. char .. "\"", 0)
 				end
 			elseif (not gotValue) then
 				gotSep = false
 				if (char == ",") then
-					error("More than one comma in a row within array")
+					error("More than one comma in a row within array", 0)
 				end
 				TokenizeValue()
 				gotValue = true
@@ -147,14 +149,12 @@ function JSON.Parse(str)
 			local codepoint = codepoints[index]
 			local char = utf8.char(codepoint)
 			if (ctrl) then
-				if (char == "\"" or char == "\\" or char == "/" or char == "b" or char == "f" or char == "n" or char == "r" or char == "t") then
-					index = (index + 1)
-					ctrl = false
-				elseif (char == "u" and utf8.char(GetCodepoints(index + 1, 4)):lower():match("^[0-9a-f]+$")) then
+				if (char == "\"" or char == "\\" or char == "/" or char == "b" or char == "f" or char == "n" or char == "r" or char == "t")
+						or (char == "u" and utf8.char(GetCodepoints(index + 1, 4)):lower():match("^[0-9a-f]+$")) then
 					index = (index + 1)
 					ctrl = false
 				else
-					error("Bad control character: \"" .. char .. "\"")
+					error("Bad control character: \"" .. char .. "\"", 0)
 				end
 			else
 				if (char == "\\") then
@@ -176,7 +176,7 @@ function JSON.Parse(str)
 		local startIndex = index
 		local char = utf8.char(codepoints[index])
 		local function GetAllDigits(throwIfNone)
-			local startIndex = index
+			local startInd = index
 			while (index <= #codepoints) do
 				char = utf8.char(codepoints[index])
 				if (char:match("%d")) then
@@ -185,8 +185,8 @@ function JSON.Parse(str)
 					break
 				end
 			end
-			if (throwIfNone and startIndex == index) then
-				error("Invalid number")
+			if (throwIfNone and startInd == index) then
+				error("Invalid number", 0)
 			end
 		end
 		if (char == "-") then
@@ -244,7 +244,7 @@ function JSON.Parse(str)
 				table.insert(tokens, {s = "null", type = "null"})
 				index = (index + 4)
 			elseif (top) then
-				error("Unknown symbol in value: \"" .. char .. "\"")
+				error("Unknown symbol in value: \"" .. char .. "\"", 0)
 			else
 				break
 			end
@@ -268,7 +268,7 @@ function JSON.Parse(str)
 		end
 	end
 
-	ParseObject = function(startToken)
+	ParseObject = function(_startToken)
 		local obj = {}
 		tokenIndex = (tokenIndex + 1)
 		local key = nil
@@ -280,7 +280,7 @@ function JSON.Parse(str)
 				elseif (token.type == "obj") then
 					break
 				else
-					warn("Parse error: Unexpected token parsing object: \"" .. token.type .. "\"")
+					error("Parse error: Unexpected token parsing object: \"" .. token.type .. "\"", 0)
 				end
 			else
 				local value = ParseToken(token)
@@ -292,7 +292,7 @@ function JSON.Parse(str)
 		return obj
 	end
 
-	ParseArray = function(startToken)
+	ParseArray = function(_startToken)
 		local arr = {}
 		tokenIndex = (tokenIndex + 1)
 		while (tokenIndex <= #tokens) do
@@ -318,11 +318,16 @@ function JSON.Parse(str)
 	TokenizeValue(true)
 	assert(#tokens > 0, "No tokens")
 
-	return ParseToken(tokens[1])
+	local retVal = ParseToken(tokens[1])
+
+	local duration = ("%.0fms"):format((os.clock() - startClock) * 1000)
+	print(duration)
+
+	return retVal
 
 end
 
-function JSON.Stringify(value)
+function JSON.Stringify(luaValue)
 	local function Stringify(value)
 		assert(ALLOWED_STRINGIFY_TYPES[type(value)], "Type \"" .. type(value) .. "\" cannot be encoded")
 		local function TableToJSON(tbl, cyclicRef)
@@ -340,12 +345,11 @@ function JSON.Stringify(value)
 				for k,v in pairs(tbl) do
 					assert(type(k) == "string", "Object must only have string keys")
 					local key = ToJSONString(k)
-					local value = Stringify(v, cyclicRef)
-					table.insert(stringBuilder, ("%s:%s"):format(key, value))
+					local val = Stringify(v, cyclicRef)
+					table.insert(stringBuilder, ("%s:%s"):format(key, val))
 				end
 				return "{" .. table.concat(stringBuilder, ",") .. "}"
 			end
-			return table.concat(stringBuilder, "")
 		end
 		if (type(value) == "table") then
 			return TableToJSON(value, {})
@@ -353,7 +357,7 @@ function JSON.Stringify(value)
 			return ToJSONString(value)
 		end
 	end
-	return Stringify(value)
+	return Stringify(luaValue)
 end
 
 JSON.Decode = JSON.Parse

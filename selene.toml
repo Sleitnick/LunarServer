@@ -1,3 +1,5 @@
+std = "lua54"
+
 [rules]
 parenthese_conditions = "allow"
 multiple_statements = "allow"

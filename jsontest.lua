@@ -2,10 +2,9 @@ package.path = (package.path .. ";src/scripts/?.lua")
 
 local JSON = require("json")
 
-local parsed = JSON.Parse([[
-{
-	"abc": [32, 75, null, true, false, null]
-}
-]])
+local jsonFile = assert(io.open("./jsontest.json", "r"), "Failed to open JSON file")
+local jsonStr = jsonFile:read("*a")
+jsonFile:close()
+local parsed = JSON.Parse(jsonStr)
 
-print(table.unpack(parsed.abc))
+print(parsed[1].friends[1].name)

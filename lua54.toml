@@ -1,0 +1,72 @@
+[selene]
+base = "lua51"
+
+[getfenv]
+removed = true
+
+[setfenv]
+removed = true
+
+[newproxy]
+removed = true
+
+[[table.unpack.args]]
+type = "table"
+
+[[table.unpack.args]]
+type = "number"
+required = false
+
+[[table.unpack.args]]
+type = "number"
+required = false
+
+[[utf8.char.args]]
+type = "..."
+required = true
+
+[[utf8.codes.args]]
+type = "string"
+required = true
+[[utf8.codes.args]]
+type = "bool"
+required = false
+
+[[utf8.codepoint.args]]
+type = "string"
+required = true
+[[utf8.codepoint.args]]
+type = "number"
+required = false
+[[utf8.codepoint.args]]
+type = "number"
+required = false
+[[utf8.codepoint.args]]
+type = "bool"
+required = false
+
+[[utf8.len.args]]
+type = "string"
+required = true
+[[utf8.len.args]]
+type = "number"
+required = false
+[[utf8.len.args]]
+type = "number"
+required = false
+[[utf8.len.args]]
+type = "bool"
+required = false
+
+[[utf8.offset.args]]
+type = "string"
+required = true
+[[utf8.offset.args]]
+type = "number"
+required = true
+[[utf8.offset.args]]
+type = "number"
+required = false
+
+[utf8.charpattern]
+property = true
