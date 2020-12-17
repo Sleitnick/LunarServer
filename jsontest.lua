@@ -7,4 +7,4 @@ local jsonStr = jsonFile:read("*a")
 jsonFile:close()
 local parsed = JSON.Parse(jsonStr)
 
-print(parsed[1].friends[1].name)
+print(parsed)

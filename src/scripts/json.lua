@@ -25,12 +25,17 @@ end
 
 function JSON.Parse(str)
 
+	local table_insert = table.insert
+	local table_unpack = table.unpack
+	local utf8_codes = utf8.codes
+	local utf8_char = utf8.char
+
 	local startClock = os.clock()
 
 	local tokens = {}
 	local codepoints = {}
-	for _,c in utf8.codes(str) do
-		table.insert(codepoints, c)
+	for _,c in utf8_codes(str) do
+		table_insert(codepoints, c)
 	end
 
 	local index, tokenIndex = 1, 1
@@ -41,21 +46,22 @@ function JSON.Parse(str)
 	local function GetCodepoints(ind, num)
 		local all = {}
 		for i = ind,ind + num - 1 do
-			table.insert(all, codepoints[i])
+			table_insert(all, codepoints[i])
 		end
-		return table.unpack(all)
+		return table_unpack(all)
 	end
 
 	TokenizeObject = function()
-		table.insert(tokens, {s = "{", type = "obj"})
+		table_insert(tokens, {s = "{", type = "obj"})
 		index = (index + 1)
 		local lookingForKey = true
 		local lookingForColon = false
 		local lookingForValue = false
 		local foundAnyKey = false
+		local completed = false
 		while (index <= #codepoints) do
 			local codepoint = codepoints[index]
-			local char = utf8.char(codepoint)
+			local char = utf8_char(codepoint)
 			if (lookingForKey) then
 				if (char:match("%s")) then
 					index = (index + 1)
@@ -65,9 +71,12 @@ function JSON.Parse(str)
 					lookingForColon = true
 					foundAnyKey = true
 				elseif ((not foundAnyKey) and char == "}") then
-					table.insert(tokens, {s = "}", type = "obj"})
+					table_insert(tokens, {s = "}", type = "obj"})
 					index = (index + 1)
+					completed = true
 					break
+				else
+					error("Unknown symbol when looking for object key: \"" .. char .. "\"")
 				end
 			elseif (lookingForColon) then
 				if (char:match("%s")) then
@@ -83,35 +92,45 @@ function JSON.Parse(str)
 				if (char:match("%s")) then
 					index = (index + 1)
 				else
+					local i = index
 					TokenizeValue()
-					lookingForValue = false
+					if (i ~= index) then
+						lookingForValue = false
+					else
+						error("Expected value", 0)
+					end
 				end
 			else
 				if (char:match("%s")) then
 					index = (index + 1)
 				elseif (char == ",") then
 					lookingForKey = true
-					--table.insert(tokens, {s = ",", type = "sep"})
+					--table_insert(tokens, {s = ",", type = "sep"})
 					index = (index + 1)
 				elseif (char == "}") then
-					table.insert(tokens, {s = "}", type = "obj"})
+					table_insert(tokens, {s = "}", type = "obj"})
 					index = (index + 1)
+					completed = true
 					break
 				else
 					error("Expected \",\" or \"}\" between values; got \"" .. char .. "\"")
 				end
 			end
 		end
+		if (not completed) then
+			error("Incomplete object", 0)
+		end
 	end
 
 	TokenizeArray = function()
-		table.insert(tokens, {s = "[", type = "arr"})
+		table_insert(tokens, {s = "[", type = "arr"})
 		index = (index + 1)
 		local gotValue = false
 		local gotSep = false
+		local completed = false
 		while (index <= #codepoints) do
 			local codepoint = codepoints[index]
-			local char = utf8.char(codepoint)
+			local char = utf8_char(codepoint)
 			if (char:match("%s")) then
 				index = (index + 1)
 			elseif (char == "]") then
@@ -119,11 +138,12 @@ function JSON.Parse(str)
 					error("Cannot end array with comma", 0)
 				end
 				index = (index + 1)
-				table.insert(tokens, {s = "]", type = "arr"})
+				table_insert(tokens, {s = "]", type = "arr"})
+				completed = true
 				break
 			elseif (gotValue) then
 				if (char == ",") then
-					--table.insert(tokens, {s = ",", type = "sep"})
+					--table_insert(tokens, {s = ",", type = "sep"})
 					index = (index + 1)
 					gotValue = false
 					gotSep = true
@@ -139,18 +159,22 @@ function JSON.Parse(str)
 				gotValue = true
 			end
 		end
+		if (not completed) then
+			error("Incomplete array", 0)
+		end
 	end
 
 	TokenizeString = function()
-		local startIndex = index
 		index = (index + 1)
+		local startIndex = index
 		local ctrl = false
+		local completed = false
 		while (index <= #codepoints) do
 			local codepoint = codepoints[index]
-			local char = utf8.char(codepoint)
+			local char = utf8_char(codepoint)
 			if (ctrl) then
 				if (char == "\"" or char == "\\" or char == "/" or char == "b" or char == "f" or char == "n" or char == "r" or char == "t")
-						or (char == "u" and utf8.char(GetCodepoints(index + 1, 4)):lower():match("^[0-9a-f]+$")) then
+						or (char == "u" and utf8_char(GetCodepoints(index + 1, 4)):lower():match("^[0-9a-f]+$")) then
 					index = (index + 1)
 					ctrl = false
 				else
@@ -161,24 +185,28 @@ function JSON.Parse(str)
 					index = (index + 1)
 					ctrl = true
 				elseif (char == "\"") then
+					completed = true
 					break
 				else
 					index = (index + 1)
 				end
 			end
 		end
+		if (not completed) then
+			error("Incomplete string", 0)
+		end
+		local strng = utf8_char(GetCodepoints(startIndex, (index - startIndex)))
 		index = (index + 1)
-		local strng = utf8.char(GetCodepoints(startIndex, (index - startIndex)))
-		table.insert(tokens, {s = strng, type = "str"})
+		table_insert(tokens, {s = strng, type = "str"})
 	end
 
 	TokenizeNumber = function()
 		local startIndex = index
-		local char = utf8.char(codepoints[index])
+		local char = utf8_char(codepoints[index])
 		local function GetAllDigits(throwIfNone)
 			local startInd = index
 			while (index <= #codepoints) do
-				char = utf8.char(codepoints[index])
+				char = utf8_char(codepoints[index])
 				if (char:match("%d")) then
 					index = (index + 1)
 				else
@@ -191,7 +219,7 @@ function JSON.Parse(str)
 		end
 		if (char == "-") then
 			index = (index + 1)
-			char = utf8.char(codepoints[index])
+			char = utf8_char(codepoints[index])
 		end
 		if (char:match("[1-9]")) then
 			index = (index + 1)
@@ -199,28 +227,28 @@ function JSON.Parse(str)
 		else
 			index = (index + 1)
 		end
-		char = utf8.char(codepoints[index])
+		char = utf8_char(codepoints[index])
 		if (char == ".") then
 			index = (index + 1)
 			GetAllDigits(true)
 		end
-		char = utf8.char(codepoints[index])
+		char = utf8_char(codepoints[index])
 		if (char == "e" or char == "E") then
 			index = (index + 1)
-			char = utf8.char(codepoints[index])
+			char = utf8_char(codepoints[index])
 			if (char == "+" or char == "-") then
 				index = (index + 1)
 			end
 			GetAllDigits(true)
 		end
-		local num = utf8.char(GetCodepoints(startIndex, (index - startIndex)))
-		table.insert(tokens, {s = num, type = "num"})
+		local num = utf8_char(GetCodepoints(startIndex, (index - startIndex)))
+		table_insert(tokens, {s = num, type = "num"})
 	end
 
 	TokenizeValue = function(top)
 		while (index <= #codepoints) do
 			local codepoint = codepoints[index]
-			local char = utf8.char(codepoint)
+			local char = utf8_char(codepoint)
 			if (top and char:match("%s")) then
 				index = (index + 1)
 			elseif (char == "{") then
@@ -231,17 +259,17 @@ function JSON.Parse(str)
 				TokenizeString()
 			elseif (char == "-" or char:match("%d")) then
 				TokenizeNumber()
-			elseif (char == "t" and utf8.char(GetCodepoints(index, 4)) == "true") then
+			elseif (char == "t" and utf8_char(GetCodepoints(index, 4)) == "true") then
 				-- Boolean true
-				table.insert(tokens, {s = true, type = "bool"})
+				table_insert(tokens, {s = true, type = "bool"})
 				index = (index + 4)
-			elseif (char == "f" and utf8.char(GetCodepoints(index, 5)) == "false") then
+			elseif (char == "f" and utf8_char(GetCodepoints(index, 5)) == "false") then
 				-- Boolean true
-				table.insert(tokens, {s = false, type = "bool"})
+				table_insert(tokens, {s = false, type = "bool"})
 				index = (index + 5)
-			elseif (char == "n" and utf8.char(GetCodepoints(index, 4)) == "null") then
+			elseif (char == "n" and utf8_char(GetCodepoints(index, 4)) == "null") then
 				-- Nil
-				table.insert(tokens, {s = "null", type = "null"})
+				table_insert(tokens, {s = "null", type = "null"})
 				index = (index + 4)
 			elseif (top) then
 				error("Unknown symbol in value: \"" .. char .. "\"", 0)
@@ -301,14 +329,14 @@ function JSON.Parse(str)
 				break
 			end
 			local value = ParseToken(token)
-			table.insert(arr, value)
+			table_insert(arr, value)
 			tokenIndex = (tokenIndex + 1)
 		end
 		return arr
 	end
 
 	ParseString = function(token)
-		return token.s:sub(2, -2)
+		return token.s
 	end
 
 	ParseNumber = function(token)
@@ -318,16 +346,22 @@ function JSON.Parse(str)
 	TokenizeValue(true)
 	assert(#tokens > 0, "No tokens")
 
+	local startClockParse = os.clock()
+	print(("Tokenize: %.0fms"):format((startClockParse - startClock) * 1000))
+
 	local retVal = ParseToken(tokens[1])
 
-	local duration = ("%.0fms"):format((os.clock() - startClock) * 1000)
-	print(duration)
+	print(("Parse: %.0fms"):format((os.clock() - startClockParse) * 1000))
+	print(("Total: %.0fms"):format((os.clock() - startClock) * 1000))
+
+	print(index, #codepoints)
 
 	return retVal
 
 end
 
 function JSON.Stringify(luaValue)
+	local table_insert = table.insert
 	local function Stringify(value)
 		assert(ALLOWED_STRINGIFY_TYPES[type(value)], "Type \"" .. type(value) .. "\" cannot be encoded")
 		local function TableToJSON(tbl, cyclicRef)
@@ -337,7 +371,7 @@ function JSON.Stringify(luaValue)
 			if (isArray) then
 				local stringBuilder = {}
 				for _,v in ipairs(tbl) do
-					table.insert(stringBuilder, Stringify(v, cyclicRef))
+					table_insert(stringBuilder, Stringify(v, cyclicRef))
 				end
 				return "[" .. table.concat(stringBuilder, ",") .. "]"
 			else
@@ -346,7 +380,7 @@ function JSON.Stringify(luaValue)
 					assert(type(k) == "string", "Object must only have string keys")
 					local key = ToJSONString(k)
 					local val = Stringify(v, cyclicRef)
-					table.insert(stringBuilder, ("%s:%s"):format(key, val))
+					table_insert(stringBuilder, ("%s:%s"):format(key, val))
 				end
 				return "{" .. table.concat(stringBuilder, ",") .. "}"
 			end
