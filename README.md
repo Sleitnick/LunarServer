@@ -133,29 +133,38 @@ return {
 
 local route = require("route").new()
 
-	-- Log all requests:
-	:On("*", function(req, res, nxt)
-		print("Got request:", req.Path)
-		nxt()
-	end)
+-- Log all requests:
+route:On("*", function(req, res, nxt)
+	print("Got request:", req.Path)
+	nxt()
+end)
 
-	-- Point "/static/..." to files under local public dir
-	:Static("/static", "./public")
+-- Point "/static/..." to files under local public dir:
+route:Static("/static", "./public")
 
-	-- Home page:
-	:Get("/", function(req, res)
-		res:HTML("./somewhere/index.html"):Send()
-	end)
+-- Home page:
+route:Get("/", function(req, res)
+	res:HTML("./somewhere/index.html"):Send()
+end)
 
-	-- Match path parameter:
-	:Get("/api/{Person}", function(req, res)
-		res:Text("Person: " .. req.Params.Person):Send()
-	end)
+-- Match path parameter:
+route:Get("/api/{ID}", function(req, res)
+	res:Text("ID: " .. req.Params.ID):Send()
+end)
 
-	-- Send a 404 HTML page:
-	:NotFound(function(req, res)
-		res:HTML("/somewhere/404.html"):Send()
-	end)
+-- Handle posting JSON data on an API endpoint:
+route:Post("/api/{ID}", function(req, res)
+	local data = req:JSON() -- {"info": "hello world"}
+	SomeDatabase:Write(req.params.ID, data.info)
+	res:JSON({
+		msg = "good";
+	}):Send()
+end)
+
+-- Send a 404 HTML page:
+route:NotFound(function(req, res)
+	res:HTML("/somewhere/404.html"):Send()
+end)
 
 -- Run the router for each request:
 return function(request, response)
