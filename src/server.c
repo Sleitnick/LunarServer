@@ -44,9 +44,11 @@ static int luaserver_new(lua_State *L) {
 // Handle each request:
 void *pthread_routine(void *arg) {
 
+	#if DEBUG_LOG_REQUEST_TIME == 1
 	clock_t start, end;
 	double cpu_time_used;
 	start = clock();
+	#endif
 
 	pthread_arg_t *pthread_arg = (pthread_arg_t *)arg;
 	int new_socket_fd = pthread_arg->new_socket_fd;
@@ -54,6 +56,12 @@ void *pthread_routine(void *arg) {
 	free(arg);
 	char buffer[30000] = {0};
 	read(new_socket_fd, buffer, 30000);
+
+	// Drop empty requests:
+	if (strlen(buffer) == 0) {
+		close(new_socket_fd);
+		return NULL;
+	}
 
 	// Lua:
 	lua_State *L = statepool_get_state();
@@ -69,9 +77,11 @@ void *pthread_routine(void *arg) {
 	lua_pop(L, 2);
 	statepool_pool_state(L);
 
+	#if DEBUG_LOG_REQUEST_TIME == 1
 	end = clock();
 	cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 	printf("Request took %.2fms to execute \n", cpu_time_used * 1000); 
+	#endif
 
 	close(new_socket_fd);
 	return NULL;

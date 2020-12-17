@@ -16,6 +16,8 @@
 
 #define LUASERVER_MT "luaserver_mt"
 
+#define DEBUG_LOG_REQUEST_TIME 0
+
 static int luaserver_new(lua_State *L);
 static int luaserver_listen(lua_State *L);
 LUALIB_API int luaopen_luaserver(lua_State *L);

@@ -33,6 +33,19 @@ local route = require("route").new()
 			path = req.Path
 		}):Send()
 	end)
+	:Post("/data", function(req, res)
+		res:JSON({
+			my_data = "hello world!";
+			more_data = {
+				stuff = {30, 40, 50};
+				more_stuff = {
+					idk = "test";
+					is = true;
+					who_knows = false;
+				};
+			}
+		}):Send()
+	end)
 	:NotFound(function(req, res)
 		if (req:Accepts("text/html")) then
 			res:HTML("html/404.html", {

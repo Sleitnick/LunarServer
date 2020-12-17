@@ -52,6 +52,7 @@ Tips:
 .Body: string;
 
 :Accepts(mime: string): boolean
+:JSON(json: string): table|string|boolean|number|nil
 ```
 
 ### Response
@@ -62,6 +63,7 @@ Tips:
 .Body: string;
 
 :HTML(filepath: string [, format: table]): Response
+:JSON(value: table|string|boolean|number|nil): Response
 :Text(text: string): Response
 :File(filepath: string): Response
 :SetStatus(status: number [, statusText: string]): Response
@@ -106,6 +108,14 @@ METHODS:
 :Static(path: string, staticDirPath: string)
 :NotFound(callback: (req: Request, res: Response) -> void)
 :Run(req: Request, res: Response)
+```
+
+### JSON
+```
+local JSON = require("json")
+
+.Parse(json: string): table|string|boolean|number|nil
+.Stringify(value: table|string|boolean|number|nil)
 ```
 
 ## Router Example

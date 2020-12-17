@@ -50,7 +50,7 @@ function Headers:__tostring()
 		local key = (v[1]:sub(1, 1):upper() .. v[1]:sub(2):lower():gsub("%-(%a)", function(s) return "-" .. s:upper() end))
 		list[i] = ("%s: %s"):format(key, v[2])
 	end
-	return table.concat(list, "\n")
+	return table.concat(list, "\r\n")
 end
 
 

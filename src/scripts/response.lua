@@ -1,4 +1,5 @@
 local Headers = require("headers")
+local JSON = require("json")
 
 local EXT_MIME_MAP = {
 
@@ -95,6 +96,14 @@ function Response:HTML(filepath, format)
 	return self
 end
 
+function Response:JSON(value)
+	local content = JSON.Stringify(value)
+	self.Body = content
+	self.Headers["Content-Type"] = "application/json"
+	self.Headers["Connection"] = "Keep-Alive"
+	return self
+end
+
 function Response:Text(text)
 	self.Body = text
 	self.Headers["Content-Type"] = "text/plain"
@@ -140,7 +149,7 @@ function Response:__tostring()
 	self.Headers:Set("Content-Length", #(self.Body or ""))
 	self.Headers:Set("Server", "LunarServer")
 	self.Headers:Set("Date", os.date("%a, %d %b %Y %X GMT"))
-	local res = ("HTTP/1.1 %i%s\n%s\n\n%s"):format(
+	local res = ("HTTP/1.1 %i%s\r\n%s\r\n\r\n%s"):format(
 		self.Status,
 		self.StatusText and " " .. self.StatusText or "",
 		tostring(self.Headers),

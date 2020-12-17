@@ -1,16 +1,17 @@
 local Util = require("util")
 local Headers = require("headers")
+local JSON = require("json")
 
 local Request = {}
 Request.__index = Request
 
 function Request.new(reqStr)
-	local method, path, httpVersion, remaining, body = reqStr:match("(%w+) (.+) (HTTP/.-)\n(.-)\n\n(.*)")
+	local method, path, httpVersion, remaining, body = reqStr:match("(%w+) (.+) (HTTP/.-)\r\n(.-)\r\n\r\n(.*)")
 	if (not method) then
-		method, path, httpVersion, remaining = reqStr:match("(%w+) (.+) (HTTP/.-)\n(.+)")
+		method, path, httpVersion, remaining = reqStr:match("(%w+) (.+) (HTTP/.-)\r\n(.+)")
 	end
 	local headers = Headers.new()
-	for k,v in remaining:gmatch("(.-): (.-)\n") do
+	for k,v in remaining:gmatch("(.-): (.-)\r\n") do
 		headers:Set(k, v)
 	end
 	if (body and #body == 0) then
@@ -38,6 +39,10 @@ end
 
 function Request:Accepts(mime)
 	return (self.Headers.Accept and self.Headers.Accept:find(mime) ~= nil)
+end
+
+function Request:JSON()
+	return JSON.Parse(self.Body)
 end
 
 return Request
