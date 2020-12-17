@@ -11,13 +11,18 @@ local function ToJSONString(value)
 end
 
 function JSON.Parse(str)
+
 	local tokens = {}
 	local codepoints = {}
 	for _,c in utf8.codes(str) do
 		table.insert(codepoints, c)
 	end
-	local index = 1
+
+	local index, tokenIndex = 1, 1
+
 	local TokenizeObject, TokenizeArray, TokenizeString, TokenizeNumber, TokenizeValue
+	local ParseObject, ParseArray, ParseString, ParseNumber, ParseToken
+
 	local function GetCodepoints(ind, num)
 		local all = {}
 		for i = ind,ind + num - 1 do
@@ -25,6 +30,7 @@ function JSON.Parse(str)
 		end
 		return table.unpack(all)
 	end
+
 	TokenizeObject = function()
 		table.insert(tokens, {s = "{", type = "obj"})
 		index = (index + 1)
@@ -52,11 +58,9 @@ function JSON.Parse(str)
 				if (char:match("%s")) then
 					index = (index + 1)
 				elseif (char == ":") then
-					table.insert(tokens, {s = ":", type = "col"})
 					lookingForColon = false
 					lookingForValue = true
 					index = (index + 1)
-					print(char)
 				else
 					error("Expected \":\" after object key; got \"" .. char .. "\"")
 				end
@@ -84,6 +88,7 @@ function JSON.Parse(str)
 			end
 		end
 	end
+
 	TokenizeArray = function()
 		table.insert(tokens, {s = "[", type = "arr"})
 		index = (index + 1)
@@ -120,10 +125,10 @@ function JSON.Parse(str)
 			end
 		end
 	end
+
 	TokenizeString = function()
-		table.insert(tokens, {s = "\"", type = "qt"})
-		index = (index + 1)
 		local startIndex = index
+		index = (index + 1)
 		local ctrl = false
 		while (index < #codepoints) do
 			local codepoint = codepoints[index]
@@ -149,11 +154,11 @@ function JSON.Parse(str)
 				end
 			end
 		end
+		index = (index + 1)
 		local strng = utf8.char(GetCodepoints(startIndex, (index - startIndex)))
 		table.insert(tokens, {s = strng, type = "str"})
-		table.insert(tokens, {s = "\"", type = "qt"})
-		index = (index + 1)
 	end
+
 	TokenizeNumber = function()
 		local startIndex = index
 		local char = utf8.char(codepoints[index])
@@ -198,6 +203,7 @@ function JSON.Parse(str)
 		local num = utf8.char(GetCodepoints(startIndex, (index - startIndex)))
 		table.insert(tokens, {s = num, type = "num"})
 	end
+
 	TokenizeValue = function(top)
 		while (index < #codepoints) do
 			local codepoint = codepoints[index]
@@ -231,16 +237,71 @@ function JSON.Parse(str)
 			end
 		end
 	end
-	TokenizeValue(true)
-	print("JSON PARSED TOKENS:")
-	for i,token in ipairs(tokens) do
-		print(i, token.type, token.s)
+
+	ParseToken = function(token)
+		local t = token.type
+		if (t == "obj") then
+			return ParseObject(token)
+		elseif (t == "arr") then
+			return ParseArray(token)
+		elseif (t == "str") then
+			return ParseString(token)
+		elseif (t == "num") then
+			return ParseNumber(token)
+		end
 	end
 
+	ParseObject = function(startToken)
+		local obj = {}
+		tokenIndex = (tokenIndex + 1)
+		local key = nil
+		while (tokenIndex < #tokens) do
+			local token = tokens[tokenIndex]
+			if (not key) then
+				if (token.type == "str") then
+					key = ParseString(token)
+				elseif (token.type == "obj") then
+					break
+				else
+					warn("Parse error: Unexpected token parsing object: \"" .. token.type .. "\"")
+				end
+			else
+				local value = ParseToken(token)
+				obj[key] = value
+				key = nil
+			end
+			tokenIndex = (tokenIndex + 1)
+		end
+		return obj
+	end
 
-	-- TODO: Parse the tokens into a Lua table
-	error("JSON Parse not yet implemented")
+	ParseArray = function(startToken)
+		local arr = {}
+		tokenIndex = (tokenIndex + 1)
+		while (tokenIndex < #tokens) do
+			local token = tokens[tokenIndex]
+			if (token.type == "arr" and token.s == "]") then
+				break
+			end
+			local value = ParseToken(token)
+			table.insert(arr, value)
+			tokenIndex = (tokenIndex + 1)
+		end
+		return arr
+	end
 
+	ParseString = function(token)
+		return token.s:sub(2, -2)
+	end
+
+	ParseNumber = function(token)
+		return tonumber(token.s)
+	end
+
+	TokenizeValue(true)
+	assert(#tokens > 0, "No tokens")
+
+	return ParseToken(tokens[1])
 
 end
 

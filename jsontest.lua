@@ -1,5 +1,9 @@
 local JSON = require("src/scripts/json")
 
-JSON.Parse([[
-10e0
+local parsed = JSON.Parse([[
+{
+	"abc": [32, 75]
+}
 ]])
+
+print(#parsed.abc)
