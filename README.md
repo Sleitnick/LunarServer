@@ -50,11 +50,11 @@ Also like Lambdas, LunarServer handlers will spawn for each request, but will be
 
 ### Request
 ```
-.Method: string;
-.Path: string;
-.Query: table;
-.Headers: Headers;
-.Body: string;
+.Method: string
+.Path: string
+.Query: table
+.Headers: Headers
+.Body: string
 
 :Accepts(mime: string): boolean
 :JSON(json: string): table|string|boolean|number|nil
@@ -64,8 +64,8 @@ Also like Lambdas, LunarServer handlers will spawn for each request, but will be
 ```
 .Headers: Headers
 .Status: number
-.StatusText: string;
-.Body: string;
+.StatusText: string
+.Body: string
 
 :HTML(filepath: string [, format: table]): Response
 :JSON(value: table|string|boolean|number|nil): Response
