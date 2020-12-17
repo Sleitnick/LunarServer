@@ -35,7 +35,6 @@ local route = require("route").new()
 	end)
 	:Post("/data", function(req, res)
 		local data = req:JSON()
-		for k,v in pairs(data) do print(k,v) end
 		print("Got message:", data.message)
 		res:JSON({
 			my_data = "hello world!";

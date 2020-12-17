@@ -1,5 +1,14 @@
 local JSON = {}
 
+local ALLOWED_STRINGIFY_TYPES = {
+	["nil"] = true;
+	["boolean"] = true;
+	["number"] = true;
+	["string"] = true;
+	["userdata"] = true;
+	["table"] = true;
+}
+
 local function ToJSONString(value)
 	if (type(value) == "string") then
 		return ("%q"):format(value)
@@ -307,6 +316,7 @@ end
 
 function JSON.Stringify(value)
 	local function Stringify(value)
+		assert(ALLOWED_STRINGIFY_TYPES[type(value)], "Type \"" .. type(value) .. "\" cannot be encoded")
 		local function TableToJSON(tbl, cyclicRef)
 			assert(cyclicRef[tbl] == nil, "Cannot have cyclical tables")
 			cyclicRef[tbl] = true
@@ -323,7 +333,7 @@ function JSON.Stringify(value)
 					assert(type(k) == "string", "Object must only have string keys")
 					local key = ToJSONString(k)
 					local value = Stringify(v, cyclicRef)
-					table.insert(stringBuilder, ("%s: %s"):format(key, value))
+					table.insert(stringBuilder, ("%s:%s"):format(key, value))
 				end
 				return "{" .. table.concat(stringBuilder, ",") .. "}"
 			end

@@ -7,3 +7,7 @@ local parsed = JSON.Parse([[
 ]])
 
 print(#parsed.abc)
+
+print(JSON.Stringify({
+	Hello = 32;
+}))
