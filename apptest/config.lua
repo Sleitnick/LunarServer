@@ -1,3 +1,4 @@
+--[[
 print("START JSON TEST")
 
 local json_lua = require("jsonlua")
@@ -33,7 +34,7 @@ local dur2 = (os.clock() - start2)
 print(("Lua JSON Stringify duration: %.2fms"):format(dur2 * 1000))
 
 print("END JSON TEST")
-
+]]
 return {
 	Port = 8080;
 	Handler = "handler";
