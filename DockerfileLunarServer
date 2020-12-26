@@ -2,14 +2,11 @@ FROM lua54:latest
 
 WORKDIR /app
 
-# COPY src/luaserver.h /tmp/luaserver.h
-# COPY src/luaserver.c /tmp/luaserver.c
-# COPY src/lunarserver.c /tmp/lunarserver.c
 ADD src /src
-COPY buildproject.sh /buildproject.sh
-RUN chmod +x /buildproject.sh
+COPY buildlunar.sh /buildlunar.sh
+RUN chmod +x /buildlunar.sh
 
 RUN apt-get update
 RUN apt-get upgrade
 RUN apt-get -y install curl build-essential
-RUN /buildproject.sh
+RUN /buildlunar.sh

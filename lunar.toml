@@ -1,0 +1,7 @@
+[[json.stringify.args]]
+required = true
+type = "any"
+
+[[json.parse.args]]
+required = true
+type = "any"

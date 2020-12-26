@@ -3,6 +3,11 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
+static const luaL_Reg lunar_loadedlibs[] = {
+	{"json", luaopen_json},
+	{NULL, NULL}
+};
+
 int lunar_append_package_path(lua_State *L, const char* path, int is_cpath) {
 	const char* field_name = (is_cpath ? "cpath" : "path");
 	lua_getglobal(L, "package");
@@ -23,9 +28,18 @@ int lunar_runscript(lua_State *L, const char* path, int args, int rets) {
 	}
 }
 
+void lunar_openlibs(lua_State *L) {
+	luaL_openlibs(L);
+	const luaL_Reg *lib;
+	for (lib = lunar_loadedlibs; lib->func; lib++) {
+		luaL_requiref(L, lib->name, lib->func, 1);
+		lua_pop(L, 1);
+	}
+}
+
 lua_State* lunar_newstate() {
 	lua_State *L = luaL_newstate();
-	luaL_openlibs(L);
+	lunar_openlibs(L);
 	lunar_append_package_path(L, ";/lib/?.so", 1);
 	lunar_append_package_path(L, ";/src/scripts/?.lua", 0);
 	return L;

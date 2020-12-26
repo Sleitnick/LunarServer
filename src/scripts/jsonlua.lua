@@ -260,15 +260,12 @@ function JSON.Parse(str)
 			elseif (char == "-" or char:match("%d")) then
 				TokenizeNumber()
 			elseif (char == "t" and utf8_char(GetCodepoints(index, 4)) == "true") then
-				-- Boolean true
 				table_insert(tokens, {s = true, type = "bool"})
 				index = (index + 4)
 			elseif (char == "f" and utf8_char(GetCodepoints(index, 5)) == "false") then
-				-- Boolean true
 				table_insert(tokens, {s = false, type = "bool"})
 				index = (index + 5)
 			elseif (char == "n" and utf8_char(GetCodepoints(index, 4)) == "null") then
-				-- Nil
 				table_insert(tokens, {s = "null", type = "null"})
 				index = (index + 4)
 			elseif (top) then
@@ -353,8 +350,6 @@ function JSON.Parse(str)
 
 	print(("Parse: %.0fms"):format((os.clock() - startClockParse) * 1000))
 	print(("Total: %.0fms"):format((os.clock() - startClock) * 1000))
-
-	print(index, #codepoints)
 
 	return retVal
 

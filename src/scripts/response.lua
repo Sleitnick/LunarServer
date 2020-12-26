@@ -1,5 +1,5 @@
 local Headers = require("headers")
-local JSON = require("json")
+local JSON = require("jsonlua")
 
 local EXT_MIME_MAP = {
 

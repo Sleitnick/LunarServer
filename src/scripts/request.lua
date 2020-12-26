@@ -1,6 +1,6 @@
 local Util = require("util")
 local Headers = require("headers")
-local JSON = require("json")
+local JSON = require("jsonlua")
 
 local Request = {}
 Request.__index = Request

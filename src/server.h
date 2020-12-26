@@ -1,3 +1,6 @@
+#ifndef __LUNARSERVER_LIBSERVER__
+#define __LUNARSERVER_LIBSERVER__
+
 #include <lua.h>
 #include <lauxlib.h>
 #include <lualib.h>
@@ -21,3 +24,5 @@
 static int luaserver_new(lua_State *L);
 static int luaserver_listen(lua_State *L);
 LUALIB_API int luaopen_luaserver(lua_State *L);
+
+#endif

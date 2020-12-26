@@ -117,7 +117,7 @@ METHODS:
 
 ### JSON
 ```
-local JSON = require("json")
+local JSON = require("jsonlua")
 
 .Null: Symbol
 

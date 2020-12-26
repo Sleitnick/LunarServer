@@ -1,4 +1,4 @@
-std = "lua54"
+std = "lua54+lunar"
 
 [rules]
 parenthese_conditions = "allow"
