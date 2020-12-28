@@ -28,6 +28,8 @@ local data = {
 	64
 }
 
+local dataStr = "[32, 64, 128]"
+
 local start = os.clock()
 local str = json.stringify(data)
 local dur = (os.clock() - start)
@@ -38,6 +40,12 @@ local start2 = os.clock()
 local luastr = json_lua.Stringify(data)
 local dur2 = (os.clock() - start2)
 print(("Lua JSON Stringify duration: %.2fms"):format(dur2 * 1000))
+
+print("Parse test")
+local start3 = os.clock()
+local dataLoaded = json.parse(dataStr)
+local dur3 = (os.clock() - start3)
+print(("JSON Parse duration: %.2fms"):format(dur3 * 1000))
 
 print("END JSON TEST")
 

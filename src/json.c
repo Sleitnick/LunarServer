@@ -8,8 +8,98 @@
 // -------------------------------------------------------------------------------
 // PARSE
 
+// UTF-8 processing adapted from: https://www.lua.org/source/5.4/lutf8lib.c.html
+#if (UINT_MAX >> 30) >= 1
+typedef unsigned int utfint;
+#else
+typedef unsigned long utfint;
+#endif
+#define JSON_MAXUNICODE 0x10FFFFu
+#define JSON_MAXUTF 0x7FFFFFFFu
+#define JSON_UTF8BUFFSZ 8
+#define JSON_ISCONT(p) ((*(p) & 0xC0) == 0x80)
+
+const char *json_utf8_decode(const char *s, utfint *val) {
+	static const utfint limits[] = {~(utfint)0, 0x80, 0x800, 0x10000u, 0x200000u, 0x4000000u};
+	unsigned int c = (unsigned char)s[0];
+	utfint res = 0;
+	if (c < 0x80) {
+		res = c;
+	} else {
+		int count = 0;
+		for (; c & 0x40; c <<= 1) {
+			unsigned int cc = (unsigned char)s[++count];
+			if ((cc & 0xC0) != 0x80) {
+				return NULL;
+			}
+			res = (res << 6) | (cc & 0x3F);
+		}
+		res |= (utfint)(c & 0x7F) << (count * 5);
+		if (count > 5 || res > JSON_MAXUTF || res < limits[count]) {
+			return NULL;
+		}
+		s += count;
+	}
+	if (res > JSON_MAXUNICODE || (0xD800u <= res && res <= 0xDFFFu)) {
+		return NULL;
+	}
+	if (val) {
+		*val = res;
+	}
+	return (s + 1);
+}
+
+void json_tokenize_value(const char *str, size_t len, list *tokens) {
+	//printf("[%d] %.*s\n", len, len, str);
+	if (strcmp(str, "[") == 0) { // NOT WORKING
+		printf("Got open bracket!\n");
+	}
+}
+
+int json_utf8_esc(char *buff, unsigned long x) {
+	int n = 1;
+	if (x < 0x80) {
+		buff[JSON_UTF8BUFFSZ - 1] = (char)x;
+	} else {
+		unsigned int mfb = 0x3f;
+		do {
+			buff[JSON_UTF8BUFFSZ - (n++)] = (char)(0x80 | (x & 0x3f));
+			x >>= 6;
+			mfb >>= 1;
+		} while (x > mfb);
+		buff[JSON_UTF8BUFFSZ - n] = (char)((~mfb << 1) | x);
+	}
+	return n;
+}
+
+list *json_tokenize(lua_State *L, const char *str, size_t str_len) {
+	list *tokens = list_new();
+	const char *se;
+	se = (str + str_len);
+	char buffer[100];
+	while (str < se) {
+		utfint code;
+		str = json_utf8_decode(str, &code);
+		if (str == NULL ) {
+			luaL_error(L, "Invalid UTF-8 code");
+			return NULL;
+		}
+		char bf[JSON_UTF8BUFFSZ];
+		int len = json_utf8_esc(bf, code);
+		json_tokenize_value(bf + JSON_UTF8BUFFSZ - len, len, tokens);
+	}
+	return tokens;
+}
+
 static int json_parse(lua_State *L) {
-	// Do the thing
+	size_t str_len;
+	const char *str = luaL_checklstring(L, 1, &str_len);
+	list *tokens = json_tokenize(L, str, str_len);
+	if (tokens == NULL) {
+		return 0;
+	}
+	// TODO: Parse tokens
+	list_destroy(tokens);
 	return 1;
 }
 
