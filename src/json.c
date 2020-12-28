@@ -4,7 +4,19 @@
 #include <string.h>
 #include <stdio.h>
 
-const char *_json_str_rep(char *original, char *replace, char *replace_with) {
+// -------------------------------------------------------------------------------
+// PARSE
+
+static int json_parse(lua_State *L) {
+	// Do the thing
+	return 1;
+}
+
+// END PARSE
+// -------------------------------------------------------------------------------
+// STRINGIFY
+
+const char *json_str_rep(char *original, char *replace, char *replace_with) {
 	char *result;
 	char *insert;
 	char *tmp;
@@ -42,10 +54,10 @@ const char *_json_str_rep(char *original, char *replace, char *replace_with) {
 	return result;
 }
 
-const char* _json_to_json_string(lua_State *L, int index) {
+const char* json_to_json_string(lua_State *L, int index) {
 	char *str = lua_tostring(L, index);
 	lua_Unsigned str_len = lua_rawlen(L, index);
-	char *result = _json_str_rep(str, "\"", "\\");
+	char *result = json_str_rep(str, "\"", "\\");
 	size_t result_len = strlen(result) + 3;
 	char *buffer;
 	buffer = (char *)malloc(result_len * sizeof(char));
@@ -54,7 +66,7 @@ const char* _json_to_json_string(lua_State *L, int index) {
 	return buffer;
 }
 
-void _json_table_dict_to_json(lua_State *L, string_builder *sb) {
+void json_table_dict_to_json(lua_State *L, string_builder *sb) {
 	lua_pushnil(L);
 	if (lua_next(L, -2) == 0) {
 		sb_append_str(sb, "[]");
@@ -65,7 +77,7 @@ void _json_table_dict_to_json(lua_State *L, string_builder *sb) {
 	lua_pushnil(L);
 	int first = 1;
 	while (lua_next(L, -2) != 0) {
-		char *key = _json_to_json_string(L, -2);
+		char *key = json_to_json_string(L, -2);
 		if (first) {
 			first = 0;
 		} else {
@@ -73,13 +85,13 @@ void _json_table_dict_to_json(lua_State *L, string_builder *sb) {
 		}
 		sb_append_str(sb, key);
 		sb_append_char(sb, ':');
-		_json_value_to_json(L, sb);
+		json_value_to_json(L, sb);
 		lua_pop(L, 1);
 	}
 	sb_append_char(sb, '}');
 }
 
-void _json_table_array_to_json(lua_State *L, string_builder *sb) {
+void json_table_array_to_json(lua_State *L, string_builder *sb) {
 	lua_Unsigned tbl_len = lua_rawlen(L, -1);
 	int i;
 	sb_append_char(sb, '[');
@@ -88,25 +100,25 @@ void _json_table_array_to_json(lua_State *L, string_builder *sb) {
 		if (i > 0) {
 			sb_append_char(sb, ',');
 		}
-		_json_value_to_json(L, sb);
+		json_value_to_json(L, sb);
 		lua_pop(L, 1);
 	}
 	sb_append_char(sb, ']');
 }
 
-void _json_table_to_json(lua_State *L, string_builder *sb) {
+void json_table_to_json(lua_State *L, string_builder *sb) {
 	lua_Unsigned tbl_len = lua_rawlen(L, -1);
 	if (tbl_len == 0) {
-		_json_table_dict_to_json(L, sb);
+		json_table_dict_to_json(L, sb);
 	} else {
-		_json_table_array_to_json(L, sb);
+		json_table_array_to_json(L, sb);
 	}
 }
 
-void _json_value_to_json(lua_State *L, string_builder *sb) {
+void json_value_to_json(lua_State *L, string_builder *sb) {
 	int type = lua_type(L, -1);
 	if (type == LUA_TSTRING) {
-		const *str = _json_to_json_string(L, -1);
+		const *str = json_to_json_string(L, -1);
 		sb_append_str(sb, str);
 	} else if (type == LUA_TNUMBER) {
 		const *str = lua_tostring(L, -1);
@@ -117,7 +129,7 @@ void _json_value_to_json(lua_State *L, string_builder *sb) {
 		int b = lua_toboolean(L, -1);
 		sb_append_str(sb, (b ? "true" : "false"));
 	} else if (type == LUA_TTABLE) {
-		_json_table_to_json(L, sb);
+		json_table_to_json(L, sb);
 	} else {
 		luaL_error(L, "JSON Stringify does not support type %s", lua_typename(L, type));
 	}
@@ -125,7 +137,7 @@ void _json_value_to_json(lua_State *L, string_builder *sb) {
 
 static int json_stringify(lua_State *L) {
 	string_builder *sb = sb_new();
-	_json_value_to_json(L, sb);
+	json_value_to_json(L, sb);
 	char *sb_out = sb_tostring(sb, NULL);
 	lua_pushstring(L, sb_out);
 	free(sb_out);
@@ -133,8 +145,12 @@ static int json_stringify(lua_State *L) {
 	return 1;
 }
 
+// END STRINGIFY
+// -------------------------------------------------------------------------------
+
 static const luaL_Reg jsonlib[] = {
 	{"stringify", json_stringify},
+	{"parse", json_parse},
 	{NULL, NULL}
 };
 

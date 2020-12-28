@@ -355,6 +355,7 @@ function JSON.Parse(str)
 
 end
 
+--[[
 function JSON.Stringify(luaValue)
 	local table_insert = table.insert
 	local function Stringify(value)
@@ -387,7 +388,8 @@ function JSON.Stringify(luaValue)
 		end
 	end
 	return Stringify(luaValue)
-end
+end]]
+JSON.Stringify = json.stringify
 
 JSON.Decode = JSON.Parse
 JSON.Encode = JSON.Stringiy
