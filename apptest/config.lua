@@ -2,6 +2,12 @@ print("START JSON TEST")
 
 local json_lua = require("jsonlua")
 
+local abc = {}
+local xyz = {}
+
+abc.xyz = abc
+xyz.abc = xyz
+
 local data = {
 	{
 		"xyz",
@@ -13,6 +19,7 @@ local data = {
 			nested = 64;
 		};
 		nothing = {};
+		--cyclical = abc;
 	},
 	"test",
 	"abc",

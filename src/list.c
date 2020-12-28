@@ -1,4 +1,5 @@
 #include "list.h"
+#include <stdlib.h>
 
 struct list {
 	size_t item_size;
@@ -133,7 +134,7 @@ void *list_pop(list *l) {
 	return item;
 }
 
-size_t find_first_index(list *l, void *item) {
+size_t list_find_first_index(list *l, void *item) {
 	size_t i;
 	for (i = 0; i < l->length; i++) {
 		if (l->items[i] == item) {
@@ -152,6 +153,6 @@ size_t list_length(list *l) {
 
 void list_clear(list *l) {
 	l->length = 0;
-	l->items = realloc(LIST_MIN_SIZE * l->item_size);
+	l->items = realloc(l->items, LIST_MIN_SIZE * l->item_size);
 	l->allocated = LIST_MIN_SIZE;
 }

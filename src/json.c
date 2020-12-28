@@ -1,5 +1,6 @@
 #include "json.h"
 #include "stringbuilder.h"
+#include "list.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -15,6 +16,8 @@ static int json_parse(lua_State *L) {
 // END PARSE
 // -------------------------------------------------------------------------------
 // STRINGIFY
+
+static const char json_lua_tbl_map_key = 't';
 
 const char *json_str_rep(char *original, char *replace, char *replace_with) {
 	char *result;
@@ -115,6 +118,23 @@ void json_table_to_json(lua_State *L, string_builder *sb) {
 	}
 }
 
+int json_has_table_or_add(lua_State *L) {
+	lua_pushlightuserdata(L, (void *)&json_lua_tbl_map_key);
+	lua_gettable(L, LUA_REGISTRYINDEX);
+	lua_pushvalue(L, -2);
+	lua_gettable(L, -2);
+	if (lua_isnil(L, -1)) {
+		lua_pushvalue(L, -3);
+		lua_pushboolean(L, 1);
+		lua_settable(L, -4);
+		lua_pop(L, 2);
+		return 0;
+	} else {
+		lua_pop(L, 2);
+		return 1;
+	}
+}
+
 void json_value_to_json(lua_State *L, string_builder *sb) {
 	int type = lua_type(L, -1);
 	if (type == LUA_TSTRING) {
@@ -129,7 +149,11 @@ void json_value_to_json(lua_State *L, string_builder *sb) {
 		int b = lua_toboolean(L, -1);
 		sb_append_str(sb, (b ? "true" : "false"));
 	} else if (type == LUA_TTABLE) {
-		json_table_to_json(L, sb);
+		if (json_has_table_or_add(L)) {
+			luaL_error(L, "JSON Stringify does not support cyclical tables");
+		} else {
+			json_table_to_json(L, sb);
+		}
 	} else {
 		luaL_error(L, "JSON Stringify does not support type %s", lua_typename(L, type));
 	}
@@ -137,11 +161,17 @@ void json_value_to_json(lua_State *L, string_builder *sb) {
 
 static int json_stringify(lua_State *L) {
 	string_builder *sb = sb_new();
+	lua_pushlightuserdata(L, (void *)&json_lua_tbl_map_key);
+	lua_newtable(L);
+	lua_settable(L, LUA_REGISTRYINDEX);
 	json_value_to_json(L, sb);
 	char *sb_out = sb_tostring(sb, NULL);
 	lua_pushstring(L, sb_out);
 	free(sb_out);
 	sb_destroy(sb);
+	lua_pushlightuserdata(L, (void *)&json_lua_tbl_map_key);
+	lua_pushnil(L);
+	lua_settable(L, LUA_REGISTRYINDEX);
 	return 1;
 }
 

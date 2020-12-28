@@ -19,7 +19,7 @@ void *list_get(list *l, size_t index);
 void list_remove(list *l, size_t index);
 void list_fast_remove(list *l, size_t index);
 void *list_pop(list *l);
-size_t find_first_index(list *l, void *item);
+size_t list_find_first_index(list *l, void *item);
 size_t list_length(list *l);
 void list_clear(list *l);
 
