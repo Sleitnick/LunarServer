@@ -26,6 +26,18 @@ void list_destroy(list *l) {
 	free(l);
 }
 
+void list_destroy_all(list *l) {
+	if (l == NULL) {
+		return;
+	}
+	size_t i;
+	for (i = 0; i < l->length; i++) {
+		void *item = l->items[i];
+		free(item);
+	}
+	list_destroy(l);
+}
+
 void list_realloc(list *l) {
 	if (l == NULL) {
 		return;
@@ -101,27 +113,30 @@ void *list_get(list *l, size_t index) {
 	return l->items[index];
 }
 
-void list_remove(list *l, size_t index) {
+void *list_remove(list *l, size_t index) {
 	if (l == NULL || index < 0 || index > (l->length - 1)) {
-		return;
+		return NULL;
 	}
 	size_t i;
 	l->length--;
+	void *last_item = l->items[l->length];
 	for (i = index; i < l->length ; i++) {
 		l->items[i] = l->items[i + 1];
 	}
 	list_shrink_if_possible(l);
+	return last_item;
 }
 
-void list_fast_remove(list *l, size_t index) {
+void *list_fast_remove(list *l, size_t index) {
 	if (l == NULL || index < 0 || index > (l->length - 1)) {
-		return;
+		return NULL;
 	}
 	l->length--;
 	void *last_item = l->items[l->length];
 	void *item = l->items[index];
 	l->items[index] = last_item;
 	list_shrink_if_possible(l);
+	return last_item;
 }
 
 void *list_pop(list *l) {

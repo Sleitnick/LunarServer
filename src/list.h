@@ -11,13 +11,14 @@ typedef struct list list;
 
 list *list_new();
 void list_destroy(list *l);
+void list_destroy_all(list *l);
 
 void list_alloc(list *l, size_t len);
 void list_add(list *l, void *item);
 void list_insert(list *l, void *item, size_t index);
 void *list_get(list *l, size_t index);
-void list_remove(list *l, size_t index);
-void list_fast_remove(list *l, size_t index);
+void *list_remove(list *l, size_t index);
+void *list_fast_remove(list *l, size_t index);
 void *list_pop(list *l);
 size_t list_find_first_index(list *l, void *item);
 size_t list_length(list *l);
